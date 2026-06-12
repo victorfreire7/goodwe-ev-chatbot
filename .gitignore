@@ -1,0 +1,15 @@
+# Ambiente virtual
+venv/
+
+# Variáveis de ambiente
+.env
+
+# Índice vetorial gerado pelo RAG (gerado localmente, não sobe pro repo)
+data/index/
+
+# Cache do Python
+__pycache__/
+*.pyc
+
+# VS Code
+.vscode/
