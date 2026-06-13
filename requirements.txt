@@ -3,3 +3,5 @@ pypdf
 chromadb
 sentence-transformers
 python-dotenv
+flask
+twilio

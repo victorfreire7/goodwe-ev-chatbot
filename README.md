@@ -18,6 +18,100 @@
 
 ---
 
+## Modos de Execução
+
+O projeto suporta dois modos de uso: **terminal** (interface local) e **WhatsApp** (via Twilio + Cloudflare Tunnel).
+
+### Modo Terminal
+
+Interface local para testes e desenvolvimento.
+
+**Pré-requisitos:**
+- Python 3.10+
+- Conta gratuita no [Groq Console](https://console.groq.com) com API key gerada
+
+**Instalação:**
+```bash
+git clone https://github.com/victorfreire7/goodwe-ev-chatbot
+cd goodwe-ev-chatbot
+
+python -m venv venv
+venv\Scripts\activate        # Windows
+source venv/bin/activate     # Linux/Mac
+
+pip install -r requirements.txt
+```
+
+**Configuração — arquivo `.env`:**
+```
+GROQ_API_KEY=sua_chave_aqui
+```
+
+**Execução:**
+```bash
+python main.py
+```
+
+Na primeira execução os manuais são indexados automaticamente. Nas seguintes, o índice é carregado do cache.
+
+---
+
+### Modo WhatsApp (Twilio + Cloudflare Tunnel)
+
+Permite interagir com a ARIA diretamente pelo WhatsApp via Twilio Sandbox.
+
+**Pré-requisitos adicionais:**
+- Conta gratuita no [Twilio](https://twilio.com) com Sandbox do WhatsApp ativado
+- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/) instalado
+
+> ⚠️ **Por que Cloudflare e não ngrok?**
+> O ngrok no plano gratuito exibe uma página de verificação para acessos automatizados, bloqueando as requisições do Twilio. O Cloudflare Tunnel não tem essa restrição e funciona de forma transparente.
+
+**Configuração adicional — adicione ao `.env`:**
+```
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+```
+
+**Execução:**
+
+Terminal 1 — sobe o servidor Flask:
+```bash
+python app.py
+```
+
+Terminal 2 — expõe o servidor para a internet:
+```bash
+cloudflared tunnel --url http://localhost:5000
+```
+
+O Cloudflare vai gerar uma URL pública no formato:
+```
+https://algo-algo-algo.trycloudflare.com
+```
+
+**Configuração do Webhook no Twilio:**
+1. Acesse [console.twilio.com](https://console.twilio.com)
+2. Vá em **Messaging → Try it out → Send a WhatsApp message → Sandbox Settings**
+3. No campo **"When a message comes in"** cole:
+```
+https://sua-url.trycloudflare.com/webhook
+```
+4. Método: **HTTP POST**
+5. Clique em **Save**
+
+**Ativação do Sandbox:**
+
+Cada número de telefone que quiser testar precisa enviar a mensagem de ativação para o número do Twilio Sandbox (`+1 415 523 8886`):
+```
+join <palavra-chave-do-seu-sandbox>
+```
+
+Após a confirmação, basta enviar qualquer mensagem e a ARIA responderá.
+
+---
+
 ## O Problema Abordado
 
 A distribuição de carregadores de veículos elétricos (EVs) no Brasil enfrenta desafios críticos de rentabilidade e disponibilidade. A GoodWe possui excelência em hardware, mas o desafio central não é apenas instalar carregadores — é tornar os eletropostos **operacionalmente inteligentes**.
@@ -52,6 +146,9 @@ O chatbot atua como um assistente multifuncional capaz de:
 | **sentence-transformers** | Embeddings multilíngues | Suporte nativo PT/EN sem necessidade de tradução |
 | **pypdf** | Extração de texto dos manuais | Leitura dos PDFs oficiais da GoodWe |
 | **python-dotenv** | Gestão de variáveis de ambiente | API key nunca exposta no código |
+| **Flask** | Servidor web para o webhook | Leve, simples e compatível com Twilio |
+| **Twilio** | Integração com WhatsApp | Sandbox gratuito para testes sem aprovação Meta |
+| **Cloudflare Tunnel** | Exposição do servidor local | Sem página de verificação, compatível com Twilio |
 
 ---
 
@@ -96,54 +193,14 @@ goodwe-ev-chatbot/
 ├── data/
 │   ├── pdfs/          # Manuais oficiais da GoodWe (base do RAG)
 │   └── index/         # Índice vetorial gerado automaticamente
-├── docs/
-│   └── README.md      # Esta documentação
 ├── .env               # Variáveis de ambiente (não versionado)
 ├── .gitignore
-├── main.py            # Chatbot principal
+├── app.py             # Servidor Flask + webhook Twilio
+├── main.py            # Chatbot principal (terminal)
+├── session.py         # Gerenciamento de sessão por número de telefone
+├── README.md          # Esta documentação
 └── requirements.txt   # Dependências
 ```
-
----
-
-## Como Executar
-
-### Pré-requisitos
-
-- Python 3.10+
-- Conta gratuita no [Groq Console](https://console.groq.com) com API key gerada
-
-### Instalação
-
-```bash
-# Clone o repositório
-git clone https://github.com/victorfreire7/goodwe-ev-chatbot
-cd goodwe-ev-chatbot
-
-# Crie e ative o ambiente virtual
-python -m venv venv
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/Mac
-
-# Instale as dependências
-pip install -r requirements.txt
-```
-
-### Configuração
-
-Crie o arquivo `.env` na raiz do projeto:
-
-```
-GROQ_API_KEY=sua_chave_aqui
-```
-
-### Execução
-
-```bash
-python main.py
-```
-
-Na primeira execução os manuais serão indexados automaticamente. Nas execuções seguintes o índice é carregado do cache.
 
 ---
 
