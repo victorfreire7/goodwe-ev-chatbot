@@ -1,6 +1,29 @@
 # ARIA — Assistente de Recarga Inteligente e Autônoma
 ### GoodWe EV Challenge 2026 — Sprint 2
 
+---
+
+> ## ⚠️ Nota de Desvios em Relação à Sprint 1
+>
+> Durante o desenvolvimento da Sprint 2, três decisões técnicas divergiram do que foi documentado na Sprint 1. Todas foram tomadas por razões práticas e estão justificadas abaixo.
+>
+> ### 1. Claude API → LLaMA 3.3 70B (via Groq)
+> **Documentado:** `claude-sonnet-4-20250514` (Anthropic)
+> **Implementado:** `llama-3.3-70b-versatile` (Groq)
+> **Motivo:** A API da Anthropic não possui free tier contínuo — exige créditos pagos. Para viabilizar o desenvolvimento, testes e demonstração do projeto sem custo, migramos para o Groq, que oferece acesso gratuito ao LLaMA 3.3 70B com alta velocidade de inferência e qualidade técnica equivalente para o caso de uso.
+>
+> ### 2. LangChain removido
+> **Documentado:** LangChain como orquestrador de cadeia RAG e roteamento por persona
+> **Implementado:** Pipeline RAG implementado diretamente com ChromaDB + Groq SDK
+> **Motivo:** Para o escopo do projeto, o LangChain adicionaria complexidade e dependências desnecessárias sem benefício real. O roteamento por persona foi resolvido de forma mais simples e controlada via seleção numérica pelo usuário, e a cadeia RAG foi implementada manualmente em menos de 20 linhas. A decisão segue o princípio de menor complexidade possível.
+>
+> ### 3. `{dados_sessao_api}` não implementado
+> **Documentado:** Injeção de dados reais ou mockados da API da estação (sessões, kWh, moradores) no system prompt
+> **Implementado:** Variável não presente no prompt atual
+> **Motivo:** A integração com uma API real da GoodWe está fora do escopo acadêmico do projeto. A implementação de mocks está prevista como próximo passo antes da execução do Golden Set de testes.
+
+---
+
 ## Integrantes do Grupo
 
 - Davi Ramos - RM: 571744
@@ -190,14 +213,18 @@ ARIA responde ao usuário
 
 ```
 goodwe-ev-chatbot/
+├── src/
+│   ├── __init__.py
+│   ├── chatbot.py     # RAG, personas, geração de resposta
+│   ├── session.py     # Gerenciamento de sessão por número de telefone
+│   └── webhook.py     # Flask + rotas Twilio
 ├── data/
 │   ├── pdfs/          # Manuais oficiais da GoodWe (base do RAG)
 │   └── index/         # Índice vetorial gerado automaticamente
 ├── .env               # Variáveis de ambiente (não versionado)
 ├── .gitignore
-├── app.py             # Servidor Flask + webhook Twilio
-├── main.py            # Chatbot principal (terminal)
-├── session.py         # Gerenciamento de sessão por número de telefone
+├── app.py             # Entrypoint WhatsApp
+├── main.py            # Entrypoint terminal
 ├── README.md          # Esta documentação
 └── requirements.txt   # Dependências
 ```
