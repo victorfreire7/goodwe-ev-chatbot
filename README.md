@@ -331,5 +331,3 @@ As 5 perguntas definidas na Sprint 1 foram executadas no modo terminal (`python 
 | 3 | Morador (disponibilidade) | 🟢 Adequada |
 | 4 | Técnico (erro E-04) | 🟢 Adequada |
 | 5 | Operador Comercial (tarifação) | 🟢 Adequada |
-
-**Conclusão:** Após a implementação do mock de dados (`DADOS_MOCK` em `src/chatbot.py`), os 5 casos do Golden Set foram avaliados como adequados. Os casos que dependiam de dados operacionais (sessões/kWh, rateio por apartamento, disponibilidade de vaga) passaram a retornar valores concretos e consistentes com o mock, mantendo o tom e a estrutura definidos no system prompt. Os casos que dependiam apenas de conhecimento procedural (técnico e tarifação) já haviam atendido aos critérios desde a primeira execução, graças ao RAG sobre os manuais oficiais da GoodWe.
