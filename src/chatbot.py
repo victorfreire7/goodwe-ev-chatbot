@@ -12,6 +12,7 @@ N_RESULTADOS_RAG = 3
 
 PERSONAS = {
     "1": {
+        "id": "1",
         "nome": "Operador Comercial",
         "icone": "👤",
         "descricao": "Gestão de eletropostos públicos, sessões e faturamento",
@@ -21,6 +22,7 @@ PERSONAS = {
         ],
     },
     "2": {
+        "id": "2",
         "nome": "Síndico / Condomínio",
         "icone": "🏢",
         "descricao": "Gestão de carregadores em condomínios e rateio de energia",
@@ -30,6 +32,7 @@ PERSONAS = {
         ],
     },
     "3": {
+        "id": "3",
         "nome": "Morador",
         "icone": "🏠",
         "descricao": "Uso do carregador, disponibilidade e agendamento",
@@ -39,6 +42,7 @@ PERSONAS = {
         ],
     },
     "4": {
+        "id": "4",
         "nome": "Técnico / Instalador",
         "icone": "🔧",
         "descricao": "Suporte técnico, erros e configuração avançada",
@@ -49,12 +53,24 @@ PERSONAS = {
     },
 }
 
+# Dados mockados da API/estação, usados para fundamentar respostas que dependem
+# de informações operacionais em tempo real (sessões, consumo, rateio, disponibilidade).
+DADOS_MOCK = {
+    "1": "Sessões hoje: 12 | Consumo total: 87,4 kWh",
+    "2": "Consumo em abril — Apto 42: 45 kWh (R$ 32,49) | Apto 87: 38 kWh (R$ 27,44) | Apto 15: 52 kWh (R$ 37,55)",
+    "3": "Vaga 12: disponível, 7 kW livres",
+    "4": "Sem dados operacionais aplicáveis a este perfil",
+}
+
 SYSTEM_PROMPT = """Você é a ARIA, assistente virtual oficial da GoodWe Brasil, especializada em gestão, \
 operação e suporte técnico da linha de carregadores de veículos elétricos (EV Chargers) e da plataforma SEMS+.
 Sua missão é fornecer respostas precisas, educadas e altamente resolutivas, sempre em português brasileiro.
 
 PERSONA DO USUÁRIO ATUAL: {persona}
 Adapte seu vocabulário e nível técnico de acordo com essa persona.
+
+DADOS DA ESTAÇÃO/USUÁRIO (MOCK):
+{dados_mock}
 
 REGRAS DE COMPORTAMENTO:
 1. FOCO NO USUÁRIO: Seja didático com moradores e clientes finais; seja técnico e direto com instaladores e técnicos.
@@ -129,7 +145,8 @@ def buscar_contexto(colecao, pergunta: str) -> str:
 def gerar_resposta(cliente: Groq, historico: list, colecao, pergunta: str, persona: dict) -> str:
     """Busca contexto via RAG e gera resposta com o LLaMA."""
     contexto = buscar_contexto(colecao, pergunta)
-    system = SYSTEM_PROMPT.format(persona=persona["nome"], contexto=contexto)
+    dados_mock = DADOS_MOCK.get(persona["id"], "Sem dados disponíveis")
+    system = SYSTEM_PROMPT.format(persona=persona["nome"], dados_mock=dados_mock, contexto=contexto)
 
     mensagens = [{"role": "system", "content": system}] + historico + [{"role": "user", "content": pergunta}]
 
