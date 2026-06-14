@@ -256,3 +256,81 @@ REGRAS DE COMPORTAMENTO:
 CONTEXTO RECUPERADO DOS MANUAIS:
 {contexto}
 ```
+
+---
+
+## Resultados do Golden Set
+
+As 5 perguntas definidas na Sprint 1 foram executadas no modo terminal (`python main.py`), uma por persona correspondente. Abaixo estão as respostas obtidas e a avaliação qualitativa de cada uma, comparadas com a "Resposta Ideal Esperada" documentada na Sprint 1.
+
+### 1. Operador Comercial — Sessões e consumo
+
+**Pergunta:** "Quantas sessões de carga foram realizadas hoje no meu eletroposto e qual foi o consumo total em kWh?"
+
+**Resposta da ARIA:** Informou não ter acesso direto aos dados em tempo real e orientou o operador a consultar a plataforma SEMS+, detalhando o caminho (login → seleção do eletroposto → Relatórios/Estatísticas → seleção do período).
+
+**Avaliação:** 🟡 **Parcialmente adequada**
+
+**Observação:** A resposta foi honesta e tecnicamente correta — não houve alucinação de números. Porém, a resposta ideal previa métricas concretas (12 sessões, 87,4 kWh) e um CTA de detalhamento, o que depende do mock de dados (`{dados_sessao_api}`) ainda não implementado, conforme documentado na nota de desvios.
+
+---
+
+### 2. Síndico — Rateio de energia entre moradores
+
+**Pergunta:** "Como faço para dividir o custo da energia entre os moradores em abril?"
+
+**Resposta da ARIA:** Apresentou uma metodologia completa em 5 passos (verificar consumo, identificar usuários, calcular consumo individual, definir tarifa, dividir o custo), incluindo duas estratégias de divisão (proporcional ou taxa fixa).
+
+**Avaliação:** 🟡 **Parcialmente adequada**
+
+**Observação:** A lógica de rateio está correta e bem estruturada, mas a resposta ideal previa valores calculados por apartamento (ex: Apto 42 - R$ 32,49) e oferta de gerar PDF — ambos dependentes de dados mockados não implementados.
+
+---
+
+### 3. Morador — Disponibilidade da vaga 12
+
+**Pergunta:** "O carregador da vaga 12 está disponível agora?"
+
+**Resposta da ARIA:** Orientou a verificar o status pelo app SolarGo/SEMS Portal, checando se há mensagens de erro, e ofereceu um próximo passo condicional (prosseguir com a carga ou verificar manutenção).
+
+**Avaliação:** 🟡 **Parcialmente adequada**
+
+**Observação:** A resposta segue a regra de ESCALONAMENTO e oferece um próximo passo, mas não responde à pergunta diretamente (sim/não disponível + potência), pois isso exige status em tempo real via dados mockados.
+
+---
+
+### 4. Técnico / Instalador — Erro E-04
+
+**Pergunta:** "O carregador HCA G2 está mostrando o erro E-04. O que significa e como resolver?"
+
+**Resposta da ARIA:** Identificou o erro como falha de comunicação com a placa de controle e apresentou 5 passos de resolução (verificar conexão, reiniciar, verificar configuração, atualizar firmware, verificar placa de controle), encerrando com escalonamento para suporte técnico.
+
+**Avaliação:** 🟢 **Adequada**
+
+**Observação:** Resposta estruturada em passos numerados, com diagnóstico técnico claro e escalonamento ao final — exatamente o formato previsto no critério de sucesso da Sprint 1. Demonstra que o RAG recuperou contexto relevante dos manuais para um cenário técnico.
+
+---
+
+### 5. Operador Comercial — Configuração de preço por kWh
+
+**Pergunta:** "Como configuro o preço por kWh para cobrar dos clientes?"
+
+**Resposta da ARIA:** Apresentou 5 passos no SEMS+/SolarGo (acessar plataforma, navegar até configuração do carregador, selecionar "Preço por kWh", inserir valor, salvar), finalizando com um próximo passo de verificação.
+
+**Avaliação:** 🟢 **Adequada**
+
+**Observação:** Instrução clara, acessível e com CTA de verificação ao final, conforme o critério de sucesso. O caminho de menu difere ligeiramente do documentado na Sprint 1 (Configurações > Eletroposto > Tarifação), mas a estrutura e objetividade da resposta atendem ao esperado.
+
+---
+
+### Resumo Geral
+
+| # | Persona | Avaliação |
+|---|---|---|
+| 1 | Operador Comercial (sessões/kWh) | 🟡 Parcialmente adequada |
+| 2 | Síndico (rateio) | 🟡 Parcialmente adequada |
+| 3 | Morador (disponibilidade) | 🟡 Parcialmente adequada |
+| 4 | Técnico (erro E-04) | 🟢 Adequada |
+| 5 | Operador Comercial (tarifação) | 🟢 Adequada |
+
+**Conclusão:** Os dois casos avaliados como adequados (técnico e configuração) não dependem de dados operacionais em tempo real — apenas de conhecimento procedural, que o RAG fornece corretamente. Os três casos parcialmente adequados compartilham a mesma causa raiz: ausência do mock de dados (`{dados_sessao_api}`) descrito na nota de desvios. A ARIA respondeu de forma honesta e segura em todos os casos, sem alucinar dados que não possuía — comportamento alinhado à regra de PRECISÃO TÉCNICA do system prompt.
