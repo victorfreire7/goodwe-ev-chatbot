@@ -16,11 +16,6 @@
 > **Documentado:** LangChain como orquestrador de cadeia RAG e roteamento por persona
 > **Implementado:** Pipeline RAG implementado diretamente com ChromaDB + Groq SDK
 > **Motivo:** Para o escopo do projeto, o LangChain adicionaria complexidade e dependências desnecessárias sem benefício real. O roteamento por persona foi resolvido de forma mais simples e controlada via seleção numérica pelo usuário, e a cadeia RAG foi implementada manualmente em menos de 20 linhas. A decisão segue o princípio de menor complexidade possível.
->
-> ### 3. `{dados_sessao_api}` não implementado
-> **Documentado:** Injeção de dados reais ou mockados da API da estação (sessões, kWh, moradores) no system prompt
-> **Implementado:** Variável não presente no prompt atual
-> **Motivo:** A integração com uma API real da GoodWe está fora do escopo acadêmico do projeto. A implementação de mocks está prevista como próximo passo antes da execução do Golden Set de testes.
 
 ---
 
@@ -189,7 +184,7 @@ Usuário pergunta
       ↓
 ChromaDB busca os 3 trechos mais relevantes nos manuais
       ↓
-Trechos são injetados no system prompt junto com a persona
+Trechos e dados mockados são injetados no system prompt junto com a persona
       ↓
 LLaMA 3.3 70B gera resposta contextualizada em PT-BR
       ↓
@@ -215,7 +210,7 @@ ARIA responde ao usuário
 goodwe-ev-chatbot/
 ├── src/
 │   ├── __init__.py
-│   ├── chatbot.py     # RAG, personas, geração de resposta
+│   ├── chatbot.py     # RAG, personas, dados mockados, geração de resposta
 │   ├── session.py     # Gerenciamento de sessão por número de telefone
 │   └── webhook.py     # Flask + rotas Twilio
 ├── data/
@@ -237,9 +232,13 @@ goodwe-ev-chatbot/
 Você é a ARIA, assistente virtual oficial da GoodWe Brasil, especializada em gestão,
 operação e suporte técnico da linha de carregadores de veículos elétricos (EV Chargers)
 e da plataforma SEMS+.
+Sua missão é fornecer respostas precisas, educadas e altamente resolutivas, sempre em português brasileiro.
 
 PERSONA DO USUÁRIO ATUAL: {persona}
 Adapte seu vocabulário e nível técnico de acordo com essa persona.
+
+DADOS DA ESTAÇÃO/USUÁRIO (MOCK):
+{dados_mock}
 
 REGRAS DE COMPORTAMENTO:
 1. FOCO NO USUÁRIO: Seja didático com moradores e clientes finais; seja técnico e
@@ -261,6 +260,8 @@ CONTEXTO RECUPERADO DOS MANUAIS:
 
 ## Resultados do Golden Set
 
+> ⚠️ **Nota:** os resultados abaixo foram coletados **antes** da implementação do mock de dados (`{dados_mock}`), descrita na nota de desvios. Os 3 casos marcados como "parcialmente adequados" devem ser executados novamente para validar se o mock resolveu a limitação identificada.
+
 As 5 perguntas definidas na Sprint 1 foram executadas no modo terminal (`python main.py`), uma por persona correspondente. Abaixo estão as respostas obtidas e a avaliação qualitativa de cada uma, comparadas com a "Resposta Ideal Esperada" documentada na Sprint 1.
 
 ### 1. Operador Comercial — Sessões e consumo
@@ -271,7 +272,7 @@ As 5 perguntas definidas na Sprint 1 foram executadas no modo terminal (`python 
 
 **Avaliação:** 🟡 **Parcialmente adequada**
 
-**Observação:** A resposta foi honesta e tecnicamente correta — não houve alucinação de números. Porém, a resposta ideal previa métricas concretas (12 sessões, 87,4 kWh) e um CTA de detalhamento, o que depende do mock de dados (`{dados_sessao_api}`) ainda não implementado, conforme documentado na nota de desvios.
+**Observação:** A resposta foi honesta e tecnicamente correta — não houve alucinação de números. Porém, a resposta ideal previa métricas concretas (12 sessões, 87,4 kWh) e um CTA de detalhamento, o que dependia do mock de dados (`{dados_mock}`) — implementado após este teste.
 
 ---
 
@@ -283,7 +284,7 @@ As 5 perguntas definidas na Sprint 1 foram executadas no modo terminal (`python 
 
 **Avaliação:** 🟡 **Parcialmente adequada**
 
-**Observação:** A lógica de rateio está correta e bem estruturada, mas a resposta ideal previa valores calculados por apartamento (ex: Apto 42 - R$ 32,49) e oferta de gerar PDF — ambos dependentes de dados mockados não implementados.
+**Observação:** A lógica de rateio está correta e bem estruturada, mas a resposta ideal previa valores calculados por apartamento (ex: Apto 42 - R$ 32,49) e oferta de gerar PDF — ambos dependentes do mock de dados (`{dados_mock}`) — implementado após este teste.
 
 ---
 
@@ -295,7 +296,7 @@ As 5 perguntas definidas na Sprint 1 foram executadas no modo terminal (`python 
 
 **Avaliação:** 🟡 **Parcialmente adequada**
 
-**Observação:** A resposta segue a regra de ESCALONAMENTO e oferece um próximo passo, mas não responde à pergunta diretamente (sim/não disponível + potência), pois isso exige status em tempo real via dados mockados.
+**Observação:** A resposta segue a regra de ESCALONAMENTO e oferece um próximo passo, mas não responde à pergunta diretamente (sim/não disponível + potência), pois isso exigia status em tempo real via mock de dados (`{dados_mock}`) — implementado após este teste.
 
 ---
 
@@ -333,4 +334,4 @@ As 5 perguntas definidas na Sprint 1 foram executadas no modo terminal (`python 
 | 4 | Técnico (erro E-04) | 🟢 Adequada |
 | 5 | Operador Comercial (tarifação) | 🟢 Adequada |
 
-**Conclusão:** Os dois casos avaliados como adequados (técnico e configuração) não dependem de dados operacionais em tempo real — apenas de conhecimento procedural, que o RAG fornece corretamente. Os três casos parcialmente adequados compartilham a mesma causa raiz: ausência do mock de dados (`{dados_sessao_api}`) descrito na nota de desvios. A ARIA respondeu de forma honesta e segura em todos os casos, sem alucinar dados que não possuía — comportamento alinhado à regra de PRECISÃO TÉCNICA do system prompt.
+**Conclusão:** Os dois casos avaliados como adequados (técnico e configuração) não dependem de dados operacionais em tempo real — apenas de conhecimento procedural, que o RAG fornece corretamente. Os três casos parcialmente adequados compartilham a mesma causa raiz: ausência do mock de dados, agora implementado em `DADOS_MOCK` (`src/chatbot.py`). A ARIA respondeu de forma honesta e segura em todos os casos, sem alucinar dados que não possuía — comportamento alinhado à regra de PRECISÃO TÉCNICA do system prompt.
