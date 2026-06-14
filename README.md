@@ -16,6 +16,11 @@
 > **Documentado:** LangChain como orquestrador de cadeia RAG e roteamento por persona
 > **Implementado:** Pipeline RAG implementado diretamente com ChromaDB + Groq SDK
 > **Motivo:** Para o escopo do projeto, o LangChain adicionaria complexidade e dependências desnecessárias sem benefício real. O roteamento por persona foi resolvido de forma mais simples e controlada via seleção numérica pelo usuário, e a cadeia RAG foi implementada manualmente em menos de 20 linhas. A decisão segue o princípio de menor complexidade possível.
+>
+> ### 3. `{dados_sessao_api}` → `{dados_mock}`
+> **Documentado:** Injeção de dados reais ou mockados da API da estação (sessões, kWh, moradores) no system prompt
+> **Implementado:** Dicionário `DADOS_MOCK` em `src/chatbot.py`, com dados fixos por persona, injetados no system prompt via `{dados_mock}`
+> **Motivo:** A integração com uma API real da GoodWe está fora do escopo acadêmico do projeto. Os dados mockados cobrem os cenários do Golden Set (sessões/kWh do operador, rateio por apartamento do síndico, disponibilidade de vaga do morador), permitindo respostas concretas sem depender de uma API externa.
 
 ---
 
@@ -260,19 +265,17 @@ CONTEXTO RECUPERADO DOS MANUAIS:
 
 ## Resultados do Golden Set
 
-> ⚠️ **Nota:** os resultados abaixo foram coletados **antes** da implementação do mock de dados (`{dados_mock}`), descrita na nota de desvios. Os 3 casos marcados como "parcialmente adequados" devem ser executados novamente para validar se o mock resolveu a limitação identificada.
-
-As 5 perguntas definidas na Sprint 1 foram executadas no modo terminal (`python main.py`), uma por persona correspondente. Abaixo estão as respostas obtidas e a avaliação qualitativa de cada uma, comparadas com a "Resposta Ideal Esperada" documentada na Sprint 1.
+As 5 perguntas definidas na Sprint 1 foram executadas no modo terminal (`python main.py`), uma por persona correspondente. Abaixo estão as respostas obtidas e a avaliação qualitativa de cada uma, comparadas com a "Resposta Ideal Esperada" documentada na Sprint 1. As perguntas 1, 2 e 3 foram re-executadas após a implementação do mock de dados (`DADOS_MOCK`).
 
 ### 1. Operador Comercial — Sessões e consumo
 
 **Pergunta:** "Quantas sessões de carga foram realizadas hoje no meu eletroposto e qual foi o consumo total em kWh?"
 
-**Resposta da ARIA:** Informou não ter acesso direto aos dados em tempo real e orientou o operador a consultar a plataforma SEMS+, detalhando o caminho (login → seleção do eletroposto → Relatórios/Estatísticas → seleção do período).
+**Resposta da ARIA:** Informou, com base nos dados disponíveis, que hoje foram realizadas **12 sessões de carga** e que o consumo total foi de **87,4 kWh**, encerrando com a pergunta "O que você gostaria de saber em seguida?".
 
-**Avaliação:** 🟡 **Parcialmente adequada**
+**Avaliação:** 🟢 **Adequada**
 
-**Observação:** A resposta foi honesta e tecnicamente correta — não houve alucinação de números. Porém, a resposta ideal previa métricas concretas (12 sessões, 87,4 kWh) e um CTA de detalhamento, o que dependia do mock de dados (`{dados_mock}`) — implementado após este teste.
+**Observação:** Métricas exatas conforme o mock de dados, tom adequado à persona e CTA aberto ao final — atende plenamente ao critério de sucesso da Sprint 1 (uso correto dos dados, métricas corretas e call-to-action).
 
 ---
 
@@ -280,11 +283,11 @@ As 5 perguntas definidas na Sprint 1 foram executadas no modo terminal (`python 
 
 **Pergunta:** "Como faço para dividir o custo da energia entre os moradores em abril?"
 
-**Resposta da ARIA:** Apresentou uma metodologia completa em 5 passos (verificar consumo, identificar usuários, calcular consumo individual, definir tarifa, dividir o custo), incluindo duas estratégias de divisão (proporcional ou taxa fixa).
+**Resposta da ARIA:** Apresentou o consumo de cada apartamento (Apto 42: 45 kWh / R$ 32,49, Apto 87: 38 kWh / R$ 27,44, Apto 15: 52 kWh / R$ 37,55), o custo total (R$ 97,48), o cálculo proporcional de cada unidade e finalizou sugerindo confirmar a divisão com os moradores e manter registro dos dados.
 
-**Avaliação:** 🟡 **Parcialmente adequada**
+**Avaliação:** 🟢 **Adequada**
 
-**Observação:** A lógica de rateio está correta e bem estruturada, mas a resposta ideal previa valores calculados por apartamento (ex: Apto 42 - R$ 32,49) e oferta de gerar PDF — ambos dependentes do mock de dados (`{dados_mock}`) — implementado após este teste.
+**Observação:** Cálculo matemático exato com base nos dados mockados e separação clara por apartamento — os dois critérios mais importantes da Sprint 1 foram atendidos. O único ponto não coberto foi a oferta explícita de gerar um PDF do rateio, mencionada na resposta ideal; o "próximo passo" oferecido foi de natureza organizacional em vez de geração de documento. Gap menor, não compromete a avaliação geral.
 
 ---
 
@@ -292,11 +295,11 @@ As 5 perguntas definidas na Sprint 1 foram executadas no modo terminal (`python 
 
 **Pergunta:** "O carregador da vaga 12 está disponível agora?"
 
-**Resposta da ARIA:** Orientou a verificar o status pelo app SolarGo/SEMS Portal, checando se há mensagens de erro, e ofereceu um próximo passo condicional (prosseguir com a carga ou verificar manutenção).
+**Resposta da ARIA:** Confirmou que a vaga 12 está **disponível**, com **7 kW livres**, e detalhou os próximos passos para iniciar o carregamento (conectar o plugue, iniciar pelo app, verificar funcionamento), incluindo precauções de segurança.
 
-**Avaliação:** 🟡 **Parcialmente adequada**
+**Avaliação:** 🟢 **Adequada**
 
-**Observação:** A resposta segue a regra de ESCALONAMENTO e oferece um próximo passo, mas não responde à pergunta diretamente (sim/não disponível + potência), pois isso exigia status em tempo real via mock de dados (`{dados_mock}`) — implementado após este teste.
+**Observação:** Resposta direta (sim/disponível + potência) conforme o mock de dados, seguida de orientação prática — atende ao critério de status preciso, resposta enxuta e oferta de próximo passo da Sprint 1.
 
 ---
 
@@ -328,10 +331,10 @@ As 5 perguntas definidas na Sprint 1 foram executadas no modo terminal (`python 
 
 | # | Persona | Avaliação |
 |---|---|---|
-| 1 | Operador Comercial (sessões/kWh) | 🟡 Parcialmente adequada |
-| 2 | Síndico (rateio) | 🟡 Parcialmente adequada |
-| 3 | Morador (disponibilidade) | 🟡 Parcialmente adequada |
+| 1 | Operador Comercial (sessões/kWh) | 🟢 Adequada |
+| 2 | Síndico (rateio) | 🟢 Adequada |
+| 3 | Morador (disponibilidade) | 🟢 Adequada |
 | 4 | Técnico (erro E-04) | 🟢 Adequada |
 | 5 | Operador Comercial (tarifação) | 🟢 Adequada |
 
-**Conclusão:** Os dois casos avaliados como adequados (técnico e configuração) não dependem de dados operacionais em tempo real — apenas de conhecimento procedural, que o RAG fornece corretamente. Os três casos parcialmente adequados compartilham a mesma causa raiz: ausência do mock de dados, agora implementado em `DADOS_MOCK` (`src/chatbot.py`). A ARIA respondeu de forma honesta e segura em todos os casos, sem alucinar dados que não possuía — comportamento alinhado à regra de PRECISÃO TÉCNICA do system prompt.
+**Conclusão:** Após a implementação do mock de dados (`DADOS_MOCK` em `src/chatbot.py`), os 5 casos do Golden Set foram avaliados como adequados. Os casos que dependiam de dados operacionais (sessões/kWh, rateio por apartamento, disponibilidade de vaga) passaram a retornar valores concretos e consistentes com o mock, mantendo o tom e a estrutura definidos no system prompt. Os casos que dependiam apenas de conhecimento procedural (técnico e tarifação) já haviam atendido aos critérios desde a primeira execução, graças ao RAG sobre os manuais oficiais da GoodWe.
