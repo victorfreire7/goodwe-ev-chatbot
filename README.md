@@ -16,11 +16,6 @@
 > **Documentado:** LangChain como orquestrador de cadeia RAG e roteamento por persona
 > **Implementado:** Pipeline RAG implementado diretamente com ChromaDB + Groq SDK
 > **Motivo:** Para o escopo do projeto, o LangChain adicionaria complexidade e dependências desnecessárias sem benefício real. O roteamento por persona foi resolvido de forma mais simples e controlada via seleção numérica pelo usuário, e a cadeia RAG foi implementada manualmente em menos de 20 linhas. A decisão segue o princípio de menor complexidade possível.
->
-> ### 3. `{dados_sessao_api}` → `{dados_mock}`
-> **Documentado:** Injeção de dados reais ou mockados da API da estação (sessões, kWh, moradores) no system prompt
-> **Implementado:** Dicionário `DADOS_MOCK` em `src/chatbot.py`, com dados fixos por persona, injetados no system prompt via `{dados_mock}`
-> **Motivo:** A integração com uma API real da GoodWe está fora do escopo acadêmico do projeto. Os dados mockados cobrem os cenários do Golden Set (sessões/kWh do operador, rateio por apartamento do síndico, disponibilidade de vaga do morador), permitindo respostas concretas sem depender de uma API externa.
 
 ---
 
