@@ -4,7 +4,7 @@ from pypdf import PdfReader
 import chromadb
 from groq import Groq
 
-MODELO = "llama-3.3-70b-versatile"
+MODELO = "openai/gpt-oss-120b"
 PASTA_PDFS = "data/pdfs"
 PASTA_INDEX = "data/index"
 CHUNK_SIZE = 1000

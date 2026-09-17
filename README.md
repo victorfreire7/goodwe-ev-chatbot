@@ -16,6 +16,11 @@
 > **Documentado:** LangChain como orquestrador de cadeia RAG e roteamento por persona
 > **Implementado:** Pipeline RAG implementado diretamente com ChromaDB + Groq SDK
 > **Motivo:** Para o escopo do projeto, o LangChain adicionaria complexidade e dependências desnecessárias sem benefício real. O roteamento por persona foi resolvido de forma mais simples e controlada via seleção numérica pelo usuário, e a cadeia RAG foi implementada manualmente em menos de 20 linhas. A decisão segue o princípio de menor complexidade possível.
+>
+> ### 3. Modelo Groq atualizado (pós-Sprint 2)
+> **Documentado/Implementado até então:** `llama-3.3-70b-versatile` (Groq)
+> **Implementado agora:** `openai/gpt-oss-120b` (Groq)
+> **Motivo:** O modelo `llama-3.3-70b-versatile` foi descontinuado pelo Groq em 16/08/2026, passando a retornar erro `404 model_not_found` em qualquer chamada. A troca para `openai/gpt-oss-120b` restaura o funcionamento do chatbot sem exigir mudanças na API key ou em outras partes do código.
 
 ---
 
