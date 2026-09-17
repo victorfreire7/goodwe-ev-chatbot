@@ -28,9 +28,7 @@
 
 - Davi Ramos - RM: 571744
 - Lucas Malchior - RM: 504027
-- Gustavo Rocha - RM: 570672
-- Victor - RM: 571099
-- Timothée Campos Ferraz - RM: 568688
+- Victor Hugo - RM: 571099
 - Gabriel Cavaloti - RM: 571643
 
 ---
