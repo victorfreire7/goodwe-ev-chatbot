@@ -1,14 +1,12 @@
-import os
 from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
-from groq import Groq
 
-from src.chatbot import inicializar_rag, gerar_resposta, PERSONAS
-from src.session import get_sessao, definir_persona, adicionar_historico, resetar_sessao
+from src.chatbot import inicializar_rag, gerar_resposta, limpar_historico, PERSONAS
+from src.session import get_sessao, definir_persona, resetar_sessao
 
 app = Flask(__name__)
 colecao = inicializar_rag()
-cliente_groq = Groq(api_key=os.getenv("GROQ_API_KEY"))
+PROVIDER_PADRAO = "groq"
 
 MENU_PERSONAS = (
     "👋 Olá! Sou a *ARIA*, assistente virtual da GoodWe Brasil.\n"
@@ -50,6 +48,7 @@ def webhook():
 
     if mensagem.lower() == "sair":
         resetar_sessao(numero)
+        limpar_historico(numero)
         msg.body(MENU_PERSONAS)
         return str(resposta)
 
@@ -63,12 +62,8 @@ def webhook():
         return str(resposta)
 
     persona = sessao["persona"]
-    historico = sessao["historico"]
 
-    texto_resposta = gerar_resposta(cliente_groq, historico, colecao, mensagem, persona)
-
-    adicionar_historico(numero, "user", mensagem)
-    adicionar_historico(numero, "assistant", texto_resposta)
+    texto_resposta = gerar_resposta(numero, colecao, mensagem, persona, PROVIDER_PADRAO)
 
     msg.body(texto_resposta)
     return str(resposta)

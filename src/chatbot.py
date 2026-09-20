@@ -2,9 +2,18 @@ import os
 import textwrap
 from pypdf import PdfReader
 import chromadb
-from groq import Groq
+from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.chat_history import InMemoryChatMessageHistory
 
-MODELO = "openai/gpt-oss-120b"
+# Modelos disponíveis para comparação (Sprint 3 — Bloco B).
+# Cada provider é resolvido por _criar_llm().
+MODELOS = {
+    "groq": "openai/gpt-oss-120b",
+    "gemini": "gemini-3.6-flash",
+}
 PASTA_PDFS = "data/pdfs"
 PASTA_INDEX = "data/index"
 CHUNK_SIZE = 1000
@@ -82,6 +91,12 @@ Termine sempre oferecendo um próximo passo lógico.
 direcione para o suporte humano da GoodWe.
 5. FORA DO ESCOPO: Se a pergunta não tiver relação com GoodWe, carregadores EV ou a plataforma SEMS+, \
 informe educadamente que só pode ajudar com esses temas.
+6. ACONSELHAMENTO ESPECIALIZADO: Nunca dê parecer jurídico, financeiro ou de segurança elétrica \
+(ex.: validade de contratos, questões fiscais, intervenção em fiação/instalação elétrica de risco). \
+Recuse educadamente e oriente explicitamente o usuário a consultar um profissional habilitado \
+(advogado, contador ou eletricista certificado, conforme o caso).
+7. IDENTIDADE: Refira-se a si mesma sempre como "ARIA, assistente da GoodWe". Nunca revele, confirme \
+ou mencione qual modelo de IA, empresa ou provedor de tecnologia está por trás do seu funcionamento.
 
 CONTEXTO RECUPERADO DOS MANUAIS:
 {contexto}"""
@@ -142,19 +157,86 @@ def buscar_contexto(colecao, pergunta: str) -> str:
     return "\n\n---\n\n".join(trechos)
 
 
-def gerar_resposta(cliente: Groq, historico: list, colecao, pergunta: str, persona: dict) -> str:
-    """Busca contexto via RAG e gera resposta com o LLaMA."""
+# Histórico de conversa por sessão, gerenciado nativamente pelo LangChain
+# (substitui a lista `historico` que antes era passada e mutada manualmente).
+_historicos: dict[str, InMemoryChatMessageHistory] = {}
+
+
+def _obter_historico(session_id: str) -> InMemoryChatMessageHistory:
+    """Callback do RunnableWithMessageHistory: retorna (ou cria) o histórico da sessão."""
+    if session_id not in _historicos:
+        _historicos[session_id] = InMemoryChatMessageHistory()
+    return _historicos[session_id]
+
+
+def limpar_historico(session_id: str) -> None:
+    """Remove o histórico de uma sessão (ex.: ao trocar de persona/reiniciar conversa).
+    Necessário porque a memória agora vive dentro do chatbot.py (por session_id),
+    separada do dicionário de sessão em src/session.py."""
+    _historicos.pop(session_id, None)
+
+
+def _criar_llm(provider: str):
+    """Instancia o chat model do provider escolhido ("groq" ou "gemini")."""
+    if provider == "gemini":
+        # thinking_level="low": sem isso, o Gemini 3.6 Flash usa "high" por padrão e gasta
+        # a maior parte do max_output_tokens em raciocínio interno (não visível), truncando
+        # a resposta final e disparando a latência (chegou a 84s no teste). "low" basta
+        # pra esse caso de uso (Q&A com contexto já recuperado via RAG).
+        return ChatGoogleGenerativeAI(
+            model=MODELOS["gemini"], temperature=0.2, max_output_tokens=1024, thinking_level="low"
+        )
+    return ChatGroq(model=MODELOS["groq"], temperature=0.2, max_tokens=1024)
+
+
+_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", SYSTEM_PROMPT),
+    MessagesPlaceholder("historico"),
+    ("human", "{pergunta}"),
+])
+
+
+def gerar_resposta_completa(session_id: str, colecao, pergunta: str, persona: dict, provider: str = "groq"):
+    """Igual a gerar_resposta, mas retorna a AIMessage completa (com metadados de uso/tokens
+    quando o provider os expõe), útil para o comparativo entre modelos do Bloco B."""
     contexto = buscar_contexto(colecao, pergunta)
     dados_mock = DADOS_MOCK.get(persona["id"], "Sem dados disponíveis")
-    system = SYSTEM_PROMPT.format(persona=persona["nome"], dados_mock=dados_mock, contexto=contexto)
 
-    mensagens = [{"role": "system", "content": system}] + historico + [{"role": "user", "content": pergunta}]
-
-    resposta = cliente.chat.completions.create(
-        model=MODELO,
-        messages=mensagens,
-        temperature=0.2,
-        max_tokens=1024,
+    cadeia = _PROMPT | _criar_llm(provider)
+    cadeia_com_memoria = RunnableWithMessageHistory(
+        cadeia,
+        _obter_historico,
+        input_messages_key="pergunta",
+        history_messages_key="historico",
     )
 
-    return resposta.choices[0].message.content
+    return cadeia_com_memoria.invoke(
+        {"pergunta": pergunta, "persona": persona["nome"], "dados_mock": dados_mock, "contexto": contexto},
+        config={"configurable": {"session_id": session_id}},
+    )
+
+
+def extrair_texto_resposta(content) -> str:
+    """Normaliza o `content` de uma AIMessage para string simples. Alguns providers
+    (Gemini 3.x, quando anexa 'thought signatures' às partes da resposta) retornam uma
+    lista de blocos em vez de uma string direta — isso precisa ser tratado aqui pra não
+    vazar a estrutura interna (ex.: o texto bruto de uma lista Python) pro usuário final."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        partes = []
+        for bloco in content:
+            if isinstance(bloco, dict) and bloco.get("type") == "text":
+                partes.append(bloco.get("text", ""))
+            elif isinstance(bloco, str):
+                partes.append(bloco)
+        return "".join(partes)
+    return str(content)
+
+
+def gerar_resposta(session_id: str, colecao, pergunta: str, persona: dict, provider: str = "groq") -> str:
+    """Busca contexto via RAG e gera resposta via LangChain, com memória por sessão
+    gerenciada pelo framework (RunnableWithMessageHistory) e modelo parametrizável
+    ("groq" ou "gemini") para a comparação entre modelos da Sprint 3."""
+    resposta = gerar_resposta_completa(session_id, colecao, pergunta, persona, provider)
+    return extrair_texto_resposta(resposta.content)
