@@ -5,3 +5,6 @@ sentence-transformers
 python-dotenv
 flask
 twilio
+langchain
+langchain-groq
+langchain-google-genai

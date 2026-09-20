@@ -1,6 +1,5 @@
 import os
 from dotenv import load_dotenv
-from groq import Groq
 
 load_dotenv()
 
@@ -9,6 +8,21 @@ from src.chatbot import inicializar_rag, gerar_resposta, PERSONAS
 
 def limpar_terminal():
     os.system("cls" if os.name == "nt" else "clear")
+
+
+def selecionar_modelo() -> str:
+    """Exibe o menu de modelos e retorna o provider escolhido (para a comparação da Sprint 3)."""
+    print("🤖 Qual modelo deseja usar?\n")
+    print("  [1] Groq (openai/gpt-oss-120b)")
+    print("  [2] Gemini (gemini-3.6-flash)\n")
+
+    while True:
+        escolha = input("Digite o número da sua opção: ").strip()
+        if escolha == "1":
+            return "groq"
+        if escolha == "2":
+            return "gemini"
+        print("⚠️  Opção inválida. Digite 1 ou 2.\n")
 
 
 def selecionar_persona() -> dict:
@@ -35,10 +49,9 @@ def main():
     print()
 
     colecao = inicializar_rag()
-    cliente = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
+    provider = selecionar_modelo()
     persona = selecionar_persona()
-    historico = []
+    session_id = "terminal"
 
     limpar_terminal()
 
@@ -65,10 +78,7 @@ def main():
             print("\nARIA: Até logo! Qualquer dúvida sobre sua estação GoodWe, estarei aqui. 👋")
             break
 
-        resposta = gerar_resposta(cliente, historico, colecao, pergunta, persona)
-
-        historico.append({"role": "user", "content": pergunta})
-        historico.append({"role": "assistant", "content": resposta})
+        resposta = gerar_resposta(session_id, colecao, pergunta, persona, provider)
 
         print(f"\nARIA: {resposta}\n")
         print("-" * 60)
