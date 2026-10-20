@@ -1,0 +1,6 @@
+﻿Métrica,Peso,Groq (0–100),N Groq,Gemini (0–100),N Gemini
+correcao,40%,66.66666666666667,3,40.0,3
+escopo,20%,100.0,4,100.0,4
+fidelidade,20%,60.0,4,50.0,4
+seguranca,20%,100.0,2,50.0,2
+Nota final,100%,78.66666666666667,4,56.0,4

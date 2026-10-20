@@ -1,0 +1,4 @@
+# Partial checkpoints can contain an incomplete/failed evaluation and are not deliverables.
+*/partial.json
+*/partial.json.tmp
+*/run.json.tmp
