@@ -354,3 +354,21 @@ As 5 perguntas definidas na Sprint 1 foram executadas no modo terminal (`python 
 | 3 | Morador (disponibilidade) | 🟢 Adequada |
 | 4 | Técnico (erro E-04) | 🟢 Adequada |
 | 5 | Operador Comercial (tarifação) | 🟢 Adequada |
+
+---
+
+## Sprint 4 — Evaluation Pipeline
+
+A Sprint 4 transforma a avaliação qualitativa em uma comparação reproduzível entre Groq e Gemini na implementação atual da ARIA. O dataset reúne casos funcionais da Sprint 1/2, os cenários comparativos e de segurança da Sprint 3 e casos de escopo/borda definidos para esta sprint.
+
+**Executar a avaliação** (requer `GROQ_API_KEY` e `GOOGLE_API_KEY` no `.env`):
+
+```bash
+python scripts/evaluate.py
+```
+
+O script salva uma execução versionada em `results/sprint4/`: `run.json` preserva casos, respostas, contexto, parâmetros e pontuações; `case_scores.csv` detalha cada caso; `summary.csv` e `summary.md` contêm os agregados. Uma execução interrompida pode ser retomada usando `--resume` com o `partial.json` do diretório. Para recalcular apenas as notas após uma alteração na rubrica, use `--resume <partial.json> --rejudge`; se algum provider esgotou a cota e as respostas já falhassem, acrescente `--score-existing` para não repetir chamadas. Os agregados comparam apenas casos concluídos nos dois providers, evitando denominadores diferentes. Para gerar o PDF a partir de uma execução com pares válidos, use `python scripts/build_report.py`.
+
+O juiz fixo é Groq com temperatura zero; responde sem receber o nome do modelo candidato. Pontos factuais dos dados mockados têm verificação determinística complementar. Pesos e critérios estão documentados em [`data/eval/RUBRICA.md`](data/eval/RUBRICA.md); os casos e gabaritos estão em [`data/eval/golden_dataset.jsonl`](data/eval/golden_dataset.jsonl). A autoavaliação do Groq e o tamanho limitado do dataset são limitações discutidas no relatório.
+
+O plano, escolhas de implementação e justificativas estão em [`PLANO_SPRINT4.md`](PLANO_SPRINT4.md). A rubrica e gabaritos estão em `data/eval/`; a lista de integrantes está em `integrantes.txt`; o relatório final é `output/pdf/relatorio_sprint4.pdf`.
